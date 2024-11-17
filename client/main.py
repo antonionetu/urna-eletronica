@@ -39,6 +39,12 @@ def salvar_e_tocar():
     numero = ler_arquivo_txt("../temp.txt")
     salva_voto(numero, "../votos.xlsx")
     tocar_som("../som-de-urna.mp3")
+    limpar_arquivo_txt("../temp.txt")
+
+
+def limpar_arquivo_txt(caminho_arquivo):
+    with open(caminho_arquivo, 'w') as file:
+        file.write("")
 
 
 root = tk.Tk()

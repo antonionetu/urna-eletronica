@@ -1,25 +1,37 @@
-import os
+import serial
 import time
-from datetime import datetime
-
+import threading
 import tkinter as tk
-import pandas as pd
+from datetime import datetime
 import pygame as pg
+import pandas as pd
 
+ultimo_dado = None
 
-def ler_arquivo_txt(caminho_arquivo):
-    with open(caminho_arquivo, 'r') as file:
-        conteudo = file.read().strip()
-    return conteudo
+def ler_serial():
+    global ultimo_dado
+    ser = serial.Serial('COM11', 9600)
+    time.sleep(2)
 
+    with open("../temp.txt", "a") as file:
+        while True:
+            if ser.in_waiting > 0:
+                data = ser.readline().decode('utf-8').strip()
+                print(data, ultimo_dado)
 
-def salva_voto(conteudo, caminho_excel):
-    data_e_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    df = pd.DataFrame([[conteudo, data_e_hora]], columns=["Número", "Horário"])
+                if data not in ["LIMPAR", "CONFIRMAR"]:
+                    file.write(data)
+                    file.close()
+                    file = open("../temp.txt", "a")
+                    ultimo_dado = None
 
-    with pd.ExcelWriter(caminho_excel, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-        df.to_excel(writer, index=False, header=False, startrow=writer.sheets['Sheet1'].max_row)
-
+                else:
+                    if data != ultimo_dado:
+                        if data == "LIMPAR":
+                            limpar_arquivo_txt("../temp.txt")
+                        elif data == "CONFIRMAR":
+                            salvar_e_tocar()
+                        ultimo_dado = data
 
 def tocar_som(caminho_som):
     pg.mixer.init()
@@ -28,12 +40,10 @@ def tocar_som(caminho_som):
     while pg.mixer.music.get_busy():
         time.sleep(1)
 
-
 def atualizar_interface():
     numero = ler_arquivo_txt("../temp.txt")
     label_numero.config(text=numero)
     root.after(1000, atualizar_interface)
-
 
 def salvar_e_tocar():
     numero = ler_arquivo_txt("../temp.txt")
@@ -41,11 +51,21 @@ def salvar_e_tocar():
     tocar_som("../som-de-urna.mp3")
     limpar_arquivo_txt("../temp.txt")
 
-
 def limpar_arquivo_txt(caminho_arquivo):
     with open(caminho_arquivo, 'w') as file:
         file.write("")
 
+def ler_arquivo_txt(caminho_arquivo):
+    with open(caminho_arquivo, 'r') as file:
+        conteudo = file.read().strip()
+    return conteudo
+
+def salva_voto(conteudo, caminho_excel):
+    data_e_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    df = pd.DataFrame([[conteudo, data_e_hora]], columns=["Número", "Horário"])
+
+    with pd.ExcelWriter(caminho_excel, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+        df.to_excel(writer, index=False, header=False, startrow=writer.sheets['Sheet1'].max_row)
 
 root = tk.Tk()
 root.title("Urna Eletrônica")
@@ -61,5 +81,8 @@ label_status = tk.Label(root, text="", font=("Helvetica", 12))
 label_status.pack(pady=10)
 
 atualizar_interface()
+
+serial_thread = threading.Thread(target=ler_serial, daemon=True)
+serial_thread.start()
 
 root.mainloop()

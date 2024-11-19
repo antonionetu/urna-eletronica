@@ -1,7 +1,4 @@
-String input = "";
-
 const int numButtons[10] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
-const int cancelButton = 1;
 const int clearButton = 2;
 const int confirmButton = 3;
 
@@ -20,7 +17,6 @@ void setup() {
     lastDebounceTime[i] = 0;
   }
 
-  pinMode(cancelButton, INPUT_PULLUP);
   pinMode(clearButton, INPUT_PULLUP);
   pinMode(confirmButton, INPUT_PULLUP);
 }
@@ -30,7 +26,6 @@ void loop() {
     debounceButton(i);
   }
 
-  debounceControlButton(cancelButton, "Botão Cancelar pressionado", 0);
   debounceControlButton(clearButton, "Botão Limpar pressionado", 1);
   debounceControlButton(confirmButton, "Botão Confirmar pressionado", 2);
 
@@ -48,8 +43,7 @@ void debounceButton(int index) {
     if (reading != buttonState[index]) {
       buttonState[index] = reading;
       if (buttonState[index] == LOW) {
-        input += String(index);
-        Serial.println(input);
+        Serial.println(index);
       }
     }
   }
@@ -68,16 +62,10 @@ void debounceControlButton(int pin, String buttonName, int controlIndex) {
   }
 
   if ((millis() - lastDebounceTimeControl[controlIndex]) > debounceDelay) {
-    if (reading == LOW && lastControlButtonState[controlIndex] == HIGH) {
-      Serial.println(buttonName);
-
-      if (pin == cancelButton || pin == clearButton) {
-        input = "";
+    if (reading == LOW) {
+      if (pin == clearButton) {
         Serial.println("LIMPAR");
-      }
-
-      if (pin == confirmButton) {
-        input = "";
+      } else if (pin == confirmButton) {
         Serial.println("CONFIRMAR");
       }
     }

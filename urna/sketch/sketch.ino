@@ -73,7 +73,12 @@ void debounceControlButton(int pin, String buttonName, int controlIndex) {
 
       if (pin == cancelButton || pin == clearButton) {
         input = "";
-        Serial.println("Input Limpo.");
+        Serial.println("LIMPAR");
+      }
+
+      if (pin == confirmButton) {
+        input = "";
+        Serial.println("CONFIRMAR");
       }
     }
   }
